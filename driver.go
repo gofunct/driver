@@ -1,14 +1,17 @@
 package driver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/spf13/viper"
 	"io"
 	"os"
 	"os/user"
 	"strings"
+	"github.com/howeyc/gopass"
 )
 
 type Driver interface {
@@ -79,6 +82,10 @@ type Flagger struct {
 	EnvPrefix   string
 }
 
+func NewFlagger(name string, requireRoot bool, annotations map[string]string, bind func(fn func(viper.FlagValue)), store io.Reader, envPrefix string) *Flagger {
+	return &Flagger{Name: name, RequireRoot: requireRoot, Annotations: annotations, Bind: bind, Store: store, EnvPrefix: envPrefix}
+}
+
 func (f *Flagger) VisitAll(fn func(viper.FlagValue)) {
 	f.Bind(fn)
 }
@@ -113,11 +120,30 @@ func (c *Context) Configure(flagger *Flagger) error {
 	return nil
 }
 
-func (c *Context) Require(s string, def string) {
+func (c *Context) Require(s string) {
 	if viper.Get(s) == nil {
 		if v, ok := os.LookupEnv(s); ok == false || v == "" {
-			viper.SetDefault(s, def)
-			_ = os.Setenv(s, strings.ToUpper(def))
+			ans := c.Prompt(" please set required value: "+s)
+			viper.SetDefault(s, ans)
+			_ = os.Setenv(s, strings.ToUpper(ans))
 		}
 	}
+}
+
+func (c *Context) Prompt(prompt string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(prompt)
+	text, _ := reader.ReadString('\n')
+	return text
+}
+
+// PromptPassword prompts user for password input.
+func (c *Context) PromptPassword(prompt string) string {
+	fmt.Printf(prompt)
+	b, err := gopass.GetPasswd()
+	if err != nil {
+		fmt.Println(err.Error())
+		return ""
+	}
+	return string(b)
 }
