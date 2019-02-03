@@ -6,6 +6,8 @@ import (
 	"github.com/satori/go.uuid"
 	"github.com/spf13/viper"
 	"io"
+	"os"
+	"strings"
 )
 
 type ContextFunc func(context.Context, *Context)
@@ -16,6 +18,16 @@ type Context struct {
 	Object  interface{}
 	Runners []ContextFunc
 }
+
+func (c *Context) Require(s string, def string) {
+	if viper.Get(s) == nil {
+		if v, ok := os.LookupEnv(s); ok == false || v == "" {
+			viper.SetDefault(s, def)
+			_ = os.Setenv(s, strings.ToUpper(def))
+		}
+	}
+}
+
 
 func NewContext(in io.Reader, out io.Writer, object interface{}, runners []ContextFunc) *Context {
 	return &Context{In: in, Out: out, Object: object, Runners: runners}
