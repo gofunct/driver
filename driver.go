@@ -11,6 +11,8 @@ type InitFunc func()
 type HandlerFunc func() error
 
 type Driver interface {
+	AddInitializer(...InitFunc)
+	AddHandler(...HandlerFunc)
 	Initializers() []InitFunc
 	Handlers() []HandlerFunc
 	Help() string
