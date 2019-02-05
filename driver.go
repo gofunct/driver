@@ -12,6 +12,9 @@ type Driver interface {
 }
 
 func Drive(ctx context.Context, d Driver) error {
+	if err := d.Init(); err != nil {
+		return err
+	}
 	if !d.Runnable() {
 		return errors.New("driver is currently not runnable")
 	}
