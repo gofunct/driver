@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"os"
+	"strings"
 )
 
 type InitFunc func()
 type HandlerFunc func() error
 
 type Driver interface {
+	Name() string
 	AddInitializer(...InitFunc)
 	AddHandler(...HandlerFunc)
 	Initializers() []InitFunc
@@ -23,6 +25,9 @@ type Driver interface {
 }
 
 func Drive(ctx context.Context, d Driver) error {
+	if os.Args[0] != strings.ToLower(d.Name()) {
+		return errors.New("first cli argument must match the name of the driver")
+	}
 	switch os.Args[1] {
 	case "help", "--help", "-h", "h":
 		fmt.Println(d.Help())
