@@ -6,6 +6,7 @@ import (
 )
 
 type Driver interface {
+	Init() error
 	Runnable() bool
 	Run(ctx context.Context) error
 }
